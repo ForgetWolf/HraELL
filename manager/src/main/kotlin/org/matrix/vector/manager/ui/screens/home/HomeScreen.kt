@@ -20,6 +20,7 @@ import androidx.compose.material.icons.rounded.Palette
 import androidx.compose.material.icons.rounded.SystemUpdate
 import androidx.compose.material.icons.rounded.Translate
 import androidx.compose.material.icons.rounded.MoreVert
+import androidx.compose.material.icons.rounded.RestartAlt
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
@@ -54,6 +55,8 @@ import org.matrix.vector.manager.ui.components.FrameworkState
 import org.matrix.vector.manager.ui.components.statusWordRes
 import org.matrix.vector.manager.ui.theme.VectorLocaleController
 import org.matrix.vector.ui.locale.LanguageSheet
+import org.matrix.vector.ui.SharedAlertDialog
+import org.matrix.vector.ui.R as UiR
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -71,6 +74,9 @@ fun HomeScreen(
     var menuOpen by remember { mutableStateOf(false) }
     var appearanceOpen by remember { mutableStateOf(false) }
     var languageOpen by remember { mutableStateOf(false) }
+    var confirmSoftReboot by remember { mutableStateOf(false) }
+    val canSoftReboot = status.state == FrameworkState.Active ||
+        status.state == FrameworkState.Degraded
 
     Scaffold(
         modifier = Modifier.nestedScroll(scroll.nestedScrollConnection),
@@ -109,6 +115,12 @@ fun HomeScreen(
                             text = { Text(stringResource(R.string.home_open_issue)) },
                             trailingIcon = { Icon(Icons.Rounded.BugReport, contentDescription = null) },
                             onClick = { menuOpen = false; onOpenReport() },
+                        )
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.action_soft_reboot)) },
+                            trailingIcon = { Icon(Icons.Rounded.RestartAlt, contentDescription = null) },
+                            enabled = canSoftReboot,
+                            onClick = { menuOpen = false; confirmSoftReboot = true },
                         )
                         DropdownMenuItem(
                             text = { Text(stringResource(R.string.classic_project)) },
@@ -174,6 +186,34 @@ fun HomeScreen(
                 }
             }
         }
+    }
+
+    if (confirmSoftReboot) {
+        SharedAlertDialog(
+            onDismissRequest = { confirmSoftReboot = false },
+            icon = { Icon(Icons.Rounded.RestartAlt, contentDescription = null) },
+            title = { Text(stringResource(R.string.action_soft_reboot)) },
+            text = { Text(stringResource(R.string.action_soft_reboot_confirm)) },
+            confirmButton = {
+                TextButton(
+                    enabled = canSoftReboot,
+                    onClick = {
+                        confirmSoftReboot = false
+                        viewModel.softReboot()
+                    },
+                ) {
+                    Text(
+                        stringResource(R.string.action_soft_reboot),
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { confirmSoftReboot = false }) {
+                    Text(stringResource(UiR.string.store_cancel))
+                }
+            },
+        )
     }
 
     if (appearanceOpen) HomeAppearanceSheet(onDismiss = { appearanceOpen = false })

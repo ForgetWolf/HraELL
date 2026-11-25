@@ -457,6 +457,14 @@ class HomeViewModel(
             .onFailure { e -> logW("status: launcher-icon toggle unread", e) }
     }
 
+    fun softReboot() {
+        viewModelScope.launch {
+            daemon.softReboot().onFailure { e ->
+                logE("home: soft reboot request failed", e)
+            }
+        }
+    }
+
     fun setStatusNotification(enabled: Boolean) {
         viewModelScope.launch {
             daemon
